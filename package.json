@@ -1,13 +1,16 @@
 {
   "name": "rate-limiter",
   "version": "1.0.0",
+  "type": "module",
   "description": "",
   "main": "index.js",
   "directories": {
     "test": "test"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "tsx src/index.ts",
+    "build": "tsc",
+    "test": "vitest"
   },
   "keywords": [],
   "author": "",
@@ -18,7 +21,7 @@
     "prettier": "^3.9.6",
     "ts-node": "^10.9.2",
     "tsx": "^4.23.11",
-    "typescript": "^7.0.2"
-  },
-  "type": "commonjs"
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.10"
+  }
 }
