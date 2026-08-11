@@ -1,23 +1,22 @@
-import type { RateLimiter } from "./RateLimiter.js";
+import type { RateLimiter } from './RateLimiter.js';
 
 type WindowState = {
     expiresAt: number;
-    numberOfRequests: number
-}
+    numberOfRequests: number;
+};
 
-type UserKey = string
+type UserKey = string;
 /**
  * A rate limiter that allows a certain number of requests per fixed period per user.
  * Limit and window size can be configured.
-*/
+ */
 export class FixedWindowRateLimiter implements RateLimiter {
     private limit: number;
     private windowSizeMs: number;
     userWindows: Map<UserKey, WindowState>;
-    
-    
+
     /**
-     * 
+     *
      * @param limit - The number of requests allowed per window size
      * @param windowSizeMs - Fixed period window size in milliseconds
      */
@@ -36,8 +35,8 @@ export class FixedWindowRateLimiter implements RateLimiter {
         if (!this.userWindows.has(key)) {
             this.userWindows.set(key, {
                 expiresAt: current + this.windowSizeMs,
-                numberOfRequests: 1
-            })
+                numberOfRequests: 1,
+            });
             return true;
         }
 
@@ -47,8 +46,8 @@ export class FixedWindowRateLimiter implements RateLimiter {
         if (expiresAt < current) {
             this.userWindows.set(key, {
                 expiresAt: current + this.windowSizeMs,
-                numberOfRequests: 1
-            })
+                numberOfRequests: 1,
+            });
             return true;
         }
 
@@ -61,7 +60,7 @@ export class FixedWindowRateLimiter implements RateLimiter {
 
         this.userWindows.set(key, {
             expiresAt: current + this.windowSizeMs,
-            numberOfRequests: numberOfRequests + 1
+            numberOfRequests: numberOfRequests + 1,
         });
         return true;
     }

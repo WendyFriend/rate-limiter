@@ -1,27 +1,29 @@
 {
-  "name": "rate-limiter",
-  "version": "1.0.0",
-  "type": "module",
-  "description": "",
-  "main": "index.js",
-  "directories": {
-    "test": "test"
-  },
-  "scripts": {
-    "dev": "tsx src/index.ts",
-    "build": "tsc",
-    "test": "vitest"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "devDependencies": {
-    "@types/node": "^26.2.0",
-    "eslint": "^10.8.1",
-    "prettier": "^3.9.6",
-    "ts-node": "^10.9.2",
-    "tsx": "^4.23.11",
-    "typescript": "^6.0.3",
-    "vitest": "^4.1.10"
-  }
+    "name": "rate-limiter",
+    "version": "1.0.0",
+    "type": "module",
+    "description": "",
+    "main": "index.js",
+    "directories": {
+        "test": "test"
+    },
+    "scripts": {
+        "dev": "tsx src/index.ts",
+        "build": "tsc",
+        "test": "vitest",
+        "format": "prettier --write .",
+        "format:check": "prettier --check ."
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "devDependencies": {
+        "@types/node": "^26.2.0",
+        "eslint": "^10.8.1",
+        "prettier": "^3.9.6",
+        "ts-node": "^10.9.2",
+        "tsx": "^4.23.11",
+        "typescript": "^6.0.3",
+        "vitest": "^4.1.10"
+    }
 }
