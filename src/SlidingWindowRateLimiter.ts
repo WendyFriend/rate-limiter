@@ -1,3 +1,4 @@
+import type { Clock } from './Clock.js';
 import type { RateLimiter } from './RateLimiter.js';
 
 type UserKey = string;
@@ -11,15 +12,17 @@ type Timestamp = number;
 export class SlidingWindowRateLimiter implements RateLimiter {
     private limit: number;
     private windowSizeMs: number;
-    userWindows: Map<UserKey, Timestamp[]>;
+    private clock: Clock;
+    private userWindows: Map<UserKey, Timestamp[]>;
 
     /**
      * @param limit - The number of requests allowed in the sliding window.
      * @param windowSizeMs - Sliding window size in milliseconds
      */
-    constructor(limit: number, windowSizeMs: number) {
+    constructor(limit: number, windowSizeMs: number, clock: Clock) {
         this.limit = limit;
         this.windowSizeMs = windowSizeMs;
+        this.clock = clock;
         this.userWindows = new Map<UserKey, Array<Timestamp>>();
     }
 
@@ -30,12 +33,12 @@ export class SlidingWindowRateLimiter implements RateLimiter {
      */
     allow(userKey: string): boolean {
         // add user if not seen
-        const current = Date.now();
+        const current = this.clock.now();
         let timestamps = this.userWindows.get(userKey) ?? [];
         const windowStart = current - this.windowSizeMs;
 
         // remove expired timestamps
-        timestamps = timestamps?.filter((t) => t >= windowStart);
+        timestamps = timestamps?.filter((t) => t > windowStart);
 
         // reached limit
         if (timestamps.length >= this.limit) {

@@ -1,48 +1,50 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { FixedWindowRateLimiter } from '../src/FixedWindowRateLimiter.js';
+import { FakeClock } from './FakeClock.js';
 
 describe('FixedWindowRateLimiter', () => {
+    const userKey = 'abc123';
+    const oneMinuteMs = 60 * 1000;
     let rateLimiter: FixedWindowRateLimiter;
-    let userKey = 'abc123';
+    let clock: FakeClock;
+
     beforeEach(() => {
-        rateLimiter = new FixedWindowRateLimiter(100, 60 * 1000);
+        clock = new FakeClock();
+        // allow 100 request every 1 minute
+        rateLimiter = new FixedWindowRateLimiter(100, oneMinuteMs, clock);
     });
 
     it('allows requests below the limit', () => {
-        // create a record for the user to expire in 60 seconds
-        rateLimiter.userWindows.set(userKey, {
-            expiresAt: Date.now() + 60 * 1000,
-            numberOfRequests: 1,
-        });
-        expect(rateLimiter.allow(userKey)).toEqual(true);
-    });
-
-    it('tracks users request correctly', () => {
-        rateLimiter.userWindows.set(userKey, {
-            expiresAt: Date.now() + 60 * 1000,
-            numberOfRequests: 1,
-        });
-        expect(rateLimiter.allow(userKey)).toEqual(true);
-        expect(rateLimiter.userWindows.get(userKey)?.numberOfRequests).toEqual(2);
+        expect(rateLimiter.allow(userKey)).toBe(true);
     });
 
     it('rejects requests after the limit is reached', () => {
-        rateLimiter.userWindows.set(userKey, {
-            expiresAt: Date.now() + 60 * 1000,
-            numberOfRequests: 100,
-        });
-        expect(rateLimiter.allow(userKey)).toEqual(false);
+        // allow 2 request every 1 minute
+        rateLimiter = new FixedWindowRateLimiter(2, oneMinuteMs, clock);
+        expect(rateLimiter.allow(userKey)).toBe(true);
+        expect(rateLimiter.allow(userKey)).toBe(true);
+        expect(rateLimiter.allow(userKey)).toBe(false);
     });
 
     it('allows requests again after the window expires', () => {
-        rateLimiter.userWindows.set(userKey, {
-            expiresAt: Date.now() - 60 * 1000,
-            numberOfRequests: 100,
-        });
-        expect(rateLimiter.allow(userKey)).toEqual(true);
+        // allow 1 request every 1 minute
+        rateLimiter = new FixedWindowRateLimiter(1, oneMinuteMs, clock);
+
+        expect(rateLimiter.allow(userKey)).toBe(true);
+
+        clock.advance(30 * 1000);
+        expect(rateLimiter.allow(userKey)).toBe(false);
+
+        clock.advance(30 * 1000);
+        expect(rateLimiter.allow(userKey)).toBe(true);
     });
 
-    it('allows a new user', () => {
-        expect(rateLimiter.allow(userKey)).toEqual(true);
+    it('tracks users independently', () => {
+        // allow 1 request every 1 minute
+        rateLimiter = new FixedWindowRateLimiter(1, oneMinuteMs, clock);
+
+        expect(rateLimiter.allow('user1')).toBe(true);
+        expect(rateLimiter.allow('user1')).toBe(false);
+        expect(rateLimiter.allow('user2')).toBe(true);
     });
 });

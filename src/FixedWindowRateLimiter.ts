@@ -1,3 +1,4 @@
+import type { Clock } from './Clock.js';
 import type { RateLimiter } from './RateLimiter.js';
 
 type WindowState = {
@@ -13,15 +14,17 @@ type UserKey = string;
 export class FixedWindowRateLimiter implements RateLimiter {
     private limit: number;
     private windowSizeMs: number;
-    userWindows: Map<UserKey, WindowState>;
+    private clock: Clock;
+    private userWindows: Map<UserKey, WindowState>;
 
     /**
      * @param limit - The number of requests allowed per window size
      * @param windowSizeMs - Fixed period window size in milliseconds
      */
-    constructor(limit: number, windowSizeMs: number) {
+    constructor(limit: number, windowSizeMs: number, clock: Clock) {
         this.limit = limit;
         this.windowSizeMs = windowSizeMs;
+        this.clock = clock;
         this.userWindows = new Map<UserKey, WindowState>();
     }
 
@@ -30,7 +33,7 @@ export class FixedWindowRateLimiter implements RateLimiter {
      * @param key - User identifier
      */
     allow(key: UserKey): boolean {
-        const current = Date.now();
+        const current = this.clock.now();
         const window = this.userWindows.get(key);
 
         // first request from this user
@@ -41,7 +44,6 @@ export class FixedWindowRateLimiter implements RateLimiter {
             });
             return true;
         }
-
 
         // if current window has expired
         if (current >= window.expiresAt) {
@@ -58,10 +60,10 @@ export class FixedWindowRateLimiter implements RateLimiter {
         }
 
         this.userWindows.set(key, {
-            expiresAt: current,
+            expiresAt: window.expiresAt,
             numberOfRequests: window.numberOfRequests + 1,
         });
-        
+
         return true;
     }
 }

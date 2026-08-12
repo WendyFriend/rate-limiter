@@ -1,43 +1,54 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { SlidingWindowRateLimiter } from '../src/SlidingWindowRateLimiter.js';
+import { FakeClock } from './FakeClock.js';
 
 describe('SlidingWindowRateLimiter', () => {
+    const userKey = 'abc123';
+    const oneMinuteMs = 60 * 1000;
+    const oneSecondMs = 1 * 1000;
     let rateLimiter: SlidingWindowRateLimiter;
-    let userKey = 'abc123';
+    let clock: FakeClock;
+
     beforeEach(() => {
-        rateLimiter = new SlidingWindowRateLimiter(100, 60 * 1000);
+        clock = new FakeClock();
+        // allow 1 request in the last 1 minute
+        rateLimiter = new SlidingWindowRateLimiter(1, oneMinuteMs, clock);
     });
 
     it('allows requests below the limit', () => {
-        const timestamp = Date.now() - 1 * 1000;
-        rateLimiter.userWindows.set(userKey, [timestamp]);
-        expect(rateLimiter.allow(userKey)).toEqual(true);
-    });
-
-    it('tracks users request correctly', () => {
-        rateLimiter.allow(userKey);
-        expect(rateLimiter.userWindows.get(userKey)?.length).toEqual(1);
+        expect(rateLimiter.allow(userKey)).toBe(true);
     });
 
     it('rejects requests after the limit is reached', () => {
-        rateLimiter = new SlidingWindowRateLimiter(1, 60 * 1000); // allow 1 request in the last 60 seconds
-        rateLimiter.allow(userKey);
-        expect(rateLimiter.allow(userKey)).toEqual(false);
+        expect(rateLimiter.allow(userKey)).toBe(true);
+        expect(rateLimiter.allow(userKey)).toBe(false);
     });
 
-    it('allows requests again after the window slides', async () => {
-        rateLimiter = new SlidingWindowRateLimiter(1, 1 * 1000); // allow 1 request in the last 1 second
-        rateLimiter.allow(userKey);
-        expect(rateLimiter.allow(userKey)).toEqual(false);
-        await new Promise((resolve) => setTimeout(resolve, 1000)); // wait 1 second
-        expect(rateLimiter.allow(userKey)).toEqual(true);
+    it('allows requests again after the window slides', () => {
+        expect(rateLimiter.allow(userKey)).toBe(true);
+
+        clock.advance(30 * oneSecondMs);
+        expect(rateLimiter.allow(userKey)).toBe(false);
+
+        clock.advance(30 * oneSecondMs);
+        expect(rateLimiter.allow(userKey)).toBe(true);
     });
 
-    it('users have independent windows', () => {
-        const userKey2 = 'abcd1234';
-        rateLimiter.allow(userKey);
-        rateLimiter.allow(userKey2);
-        expect(rateLimiter.userWindows.get(userKey)?.length).toEqual(1);
-        expect(rateLimiter.userWindows.get(userKey2)?.length).toEqual(1);
+    it('prevents requests across fixed-window boundaries', () => {
+        // allow 2 requests in the last minute
+        rateLimiter = new SlidingWindowRateLimiter(2, oneMinuteMs, clock);
+        
+        clock.advance(oneMinuteMs - oneSecondMs);
+        expect(rateLimiter.allow(userKey)).toBe(true);
+        expect(rateLimiter.allow(userKey)).toBe(true);
+
+        clock.advance(2 * oneSecondMs);
+        expect(rateLimiter.allow(userKey)).toBe(false);
+    });
+
+    it('tracks users independently', () => {
+        expect(rateLimiter.allow('user1')).toBe(true);
+        expect(rateLimiter.allow('user1')).toBe(false);
+        expect(rateLimiter.allow('user2')).toBe(true);
     });
 });
